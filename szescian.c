@@ -6,6 +6,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 #include <GL/glut.h>
 #include <math.h>
+#include "materials.h"
+
 
 
 // Definicja stalych
@@ -16,9 +18,16 @@
 #define OBSERWATOR_FOV_Y        30.0  
 #define OBSERWATOR_OBROT_Z      0
 
-
-
-
+// Definicja stalych
+#define X_OFFSET_SWIATLO    10
+#define Y_OFFSET_SWIATLO    120
+#define X_OFFSET_OBIEKT     10
+#define ID_MENU_SWIATLA     0
+#define LPOZ_MENU_SWIATLA   10
+#define OBSERWATOR_FOV_Y        30.0
+#define odlmin 20.0
+#define odlmax 1000.0
+#define DEG2RAD(x) ((float)(x)*M_PI/180.0)
 
 //definiowanie N
 #define N 8
@@ -37,8 +46,12 @@
 #define R_WEW_PIERSCIENIA		15
 #define R_ZEW_PIERSCIENIA		18
 
-//zestaw 10
+int sIndeks;           // Wybrana pozycja w tablicy parametrow swiatla
+int mIndeks;           // Wybrana pozycja w tablicy parametrow materialu
+int change_material = 1;
+int menu;              // Identyfikator wybranego menu (menu swiatla lub menu materialu)
 
+//zestaw 10
 
 // Zmienne globalne
 double  bok = DLUGOSC_BOKU; // Dlugosc boku szescianu
@@ -168,6 +181,16 @@ void Pierscien(double l) {
 	}
 	glEnd();
 
+		//wektor podstawy
+		glColor3f(1, 1, 0);
+		glBegin(GL_LINES);
+		for (i = 0; i*dAlfa <= 360.0; i++)
+		{
+			glVertex3f(l*cos(DEG2RAD(i*dAlfa)), 0, l*sin(DEG2RAD(i*dAlfa)));
+			glVertex3f(l*cos(DEG2RAD(i*dAlfa)), -1, l*sin(DEG2RAD(i*dAlfa)));
+		}
+		glEnd();
+
 	//sciana wew
 	glColor3f(0, 1, 1);
 	glBegin(GL_QUAD_STRIP);
@@ -177,6 +200,16 @@ void Pierscien(double l) {
 		glVertex3f((l+1.5)*cos(DEG2RAD(i*dAlfa)), hPie, (l+1.5)*sin(DEG2RAD(i*dAlfa)));
 	}
 	glEnd();
+
+		//wektor sciany wew
+		glColor3f(0, 1, 0.5);
+		glBegin(GL_LINES);
+		for (i = 0; i*dAlfa <= 360.0; i++)
+		{
+			glVertex3f((l + 1.5)*cos(DEG2RAD(i*dAlfa)), hPie, (l + 1.5)*sin(DEG2RAD(i*dAlfa)));
+			glVertex3f((l+3)*cos(DEG2RAD(i*dAlfa)), 3/cos(DEG2RAD(30)) , (l + 3)*sin(DEG2RAD(i*dAlfa)));
+		}
+		glEnd();
 	
 	//sciana zew
 	glColor3f(1, 0, 0);
@@ -187,6 +220,16 @@ void Pierscien(double l) {
 		glVertex3f((l+1.5)*cos(DEG2RAD(i*dAlfa)), hPie, (l+1.5)*sin(DEG2RAD(i*dAlfa)));
 	}
 	glEnd();
+
+		//wektor sciany zew
+		glColor3f(0.5, 0.5, 0.8);
+		glBegin(GL_LINES);
+		for (i = 0; i*dAlfa <= 360.0; i++)
+		{
+			glVertex3f((l + 1.5)*cos(DEG2RAD(i*dAlfa)), hPie, (l + 1.5)*sin(DEG2RAD(i*dAlfa)));
+			glVertex3f(l*cos(DEG2RAD(i*dAlfa)), 3 / cos(DEG2RAD(30)), l*sin(DEG2RAD(i*dAlfa)));
+		}
+		glEnd();
 	
 }
 
@@ -283,6 +326,12 @@ void WyswietlObraz(void)
 // Funkcja obslugi klawiatury
 void ObslugaKlawiatury(unsigned char klawisz, int x, int y)
 {
+	//MODE
+	if (klawisz == 'f')
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	if (klawisz == 'l')
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 	if (klawisz == '+')
 		bok *= 2.0;
 	else if (klawisz == '-')
@@ -305,11 +354,10 @@ void ObslugaKlawiatury(unsigned char klawisz, int x, int y)
 		os_z--;
 
 	//przyblizanie
-	if (klawisz == '+')
-		os_o = (os_o < odlmin) ? os_o + 3.0 : os_o;
 	if (klawisz == '-')
+		os_o = (os_o < odlmin) ? os_o + 3.0 : os_o;
+	if (klawisz == '+')
 		os_o = (os_o > odlmax) ? os_o - 3.0 : os_o;
-
 
 	/* 
 	//N dla stozka
@@ -327,10 +375,6 @@ void ObslugaKlawiatury(unsigned char klawisz, int x, int y)
 	if (klawisz == 'e')
 		if (en > 4)
 			en = en - 2;
-
-
-
-
 
 }
 
@@ -364,7 +408,7 @@ int  main(int argc, char **argv)
 	glClearColor(0.0f, 0.0f, 0.3f, 0.0f);
 
 	// Wlaczenie wyswietlania wielokatow w postaci obrysow (przydatne w celach diagnostycznych).
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_SMOOTH);
 
 	// Zarejestrowanie funkcji (callback) odpowiedzialnej za 
 	glutDisplayFunc(WyswietlObraz);
